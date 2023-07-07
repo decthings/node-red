@@ -1,0 +1,135 @@
+<script type="text/javascript">
+    RED.nodes.registerType(
+        'decthings-evaluate',
+        {
+            category: 'function',
+            color: '#4187d6',
+            defaults: {
+                modelId: {
+                    value: "",
+                    required: true
+                },
+                snapshotId: {
+                    value: "",
+                },
+                apiKey: {
+                    value: "",
+                }
+            },
+            inputs: 1,
+            outputs: 1,
+            label: function() {
+                return this.name || "decthings evaluate";
+            }
+        }
+    );
+</script>
+
+<script type="text/html" data-template-name="decthings-evaluate">
+    <p>
+        This node evaluates a Decthings AI model. Decthings is a platform which allows you to create and run models in the cloud.
+        <br />
+        <br />
+        Note: With Decthings, you pay for the compute you use. This node may add to your monthly Decthings invoice.
+    </p>
+    <div class="form-row">
+        <label for="node-input-modelId">
+            <i class="fa fa-tag"></i> Model ID
+        </label>
+        <input type="text" id="node-input-modelId" placeholder="Model ID"></input>
+    </div>
+    <p>
+        The model ID defines which model to evaluate and can be found on the
+        <a target="_blank" style="color: var(--red-ui-text-color-link)" href="https://app.decthings.com/models">model page</a>.
+    </p>
+    <div class="form-row">
+        <label for="node-input-snapshotId">
+            <i class="fa fa-tag"></i> Snapshot ID
+        </label>
+        <input type="text" id="node-input-snapshotId" placeholder="Snapshot ID"></input>
+    </div>
+    <p>Optional. If provided, the snapshot ID defines which snapshot within the model to use.</p>
+    <div class="form-row">
+        <label for="node-input-apiKey">
+            <i class="fa fa-tag"></i> API key
+        </label>
+        <input type="text" id="node-input-apiKey" placeholder="Api key"></input>
+    </div>
+    <p>
+        Add an API key to use your own models. Without an API key you can only use public Decthings-made models, and you will be limited
+        to only a few evaluations during a certain time period.
+    </p>
+</script>
+
+<script type="text/html" data-help-name="decthings-evaluate">
+    <p>
+        This node evaluates a Decthings AI model. Decthings is a platform which allows you to create and run models in the cloud.
+        <br />
+        <br />
+        Note: With Decthings, you pay for the compute you use. This node may add to your monthly Decthings invoice.
+        <br />
+        <br />
+        If your model has a single input and/or single output (such as an image classifier which inputs an image and outputs a label),
+        you likely want to use the nodes <code>decthings-single-input</code> and <code>decthings-single-output</code> before and after this
+        node. The former allows you to easily construct the input parameters, and the latter allows you to easily extract the output data from
+        the response.
+        <br />
+        <br />
+        If your model has multiple inputs or outputs, you will need to use a function node and construct the inputs and extract the outputs
+        yourself.
+    </p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">array</span>
+        </dt>
+        <dd>
+            Will use the input payload as the "params" property of the evaluate call to Decthings.
+            <br />
+            <br />
+            Therefore, the payload should be an array of input parameters, of the form:
+            <pre>{ name: string, data: <a target="_blank" href="https://www.decthings.com/docs/api-nodejs#data">Data</a> }[]</pre>. 
+        </dd>
+
+        <dt class="optional">modelId <span class="property-type">string</span></dt>
+        <dd>
+            The message field <code>msg.modelId</code> can be used to override the configured model ID. This configures which model to use.
+        </dd>
+
+        <dt class="optional">snapshotId <span class="property-type">string</span></dt>
+        <dd>
+            The message field <code>msg.snapshotId</code> can be used to override the configured snapshot ID. If provided or configured,
+            the snapshot ID specifies which snapshot within the model to use.
+        </dd>
+
+        <br />
+        In total, the call to Decthings looks like the following:
+        <pre>let response = await decthingsClient.model.evaluate({
+    modelId: msg.modelId || config.modelId,
+    snapshotId: msg.snapshotId || config.snapshotId,
+    params: msg.payload
+})</pre>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">array</span>
+        </dt>
+        <dd>
+            If the evaluation is successful the output field <code>msg.payload</code> will be set to the output parameter array of the
+            response: <pre>msg.payload = response.result.success.output</pre>
+        </dd>
+
+        <dt>executionDetails <span class="property-type">object</span></dt>
+        <dd>
+            If the evaluation is successful, the output field <code>msg.executionDetails</code> will contain the execution details reported by
+            Decthings: <pre>msg.payload = response.result.success.executionDetails</pre>
+        </dd>
+    </dl>
+
+    <p>
+        Take a look at the <a href="https://www.decthings.com/docs/api-nodejs#model-evaluate">documentation</a> for more information
+        about the inputs and outputs to the decthings evaluate function.
+    </p>
+</script>

@@ -1,0 +1,93 @@
+<script type="text/javascript">
+    RED.nodes.registerType(
+        'decthings-single-output',
+        {
+            category: 'function',
+            color: '#4187d6',
+            defaults: {},
+            inputs: 1,
+            outputs: 1,
+            label: function() {
+                return this.name || "Decthings single output";
+            }
+        }
+    );
+</script>
+
+<script type="text/html" data-template-name="decthings-single-output">
+    <p>This node extracts the data from an evaluation response.</p>
+</script>
+
+<script type="text/html" data-help-name="decthings-single-output">
+    <p>
+        This node extracts data from an evaluation response.
+        <br />
+        <br />
+        It does so by scanning through the result and stopping at the first instance of a Decthings
+        <a href="https://www.decthings.com/docs/api-nodejs#data">DataElement</a>. The data contained within the DataElement
+        will then be extracted and sent as the output payload.
+    </p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">number | string | boolean | Buffer</span>
+        </dt>
+        <dd>
+            The message field <code>msg.payload</code> will be converted to a Decthings
+            <a href="https://www.decthings.com/docs/api-nodejs#data">DataElement</a>.
+        </dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">number | string | boolean | Map | Buffer</span>
+        </dt>
+        <dd>
+            If a DataElement is found within the input payload, the output field <code>msg.payload</code> is set to the inner data of
+            the DataElement. The inner data is extracted as follows:
+            <ul>
+                <li>
+                    For numeric DataElement types (<code>f32</code>, <code>f64</code>, <code>i8</code>, <code>i16</code>,
+                    <code>i32</code>, <code>i64</code>, <code>u8</code>, <code>u16</code>, <code>u32</code> or <code>u64</code>),
+                    the number is extracted.
+                </li>
+                <li>
+                    For <code>string</code> DataElement type, the inner string is extracted.
+                </li>
+                <li>
+                    For <code>boolean</code> DataElement type, the inner boolean is extracted.
+                </li>
+                <li>
+                    For <code>dictionary</code> DataElement type, a
+                    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map">Map</a>
+                    containing all dictionary keys and values is extracted. The keys will be strings, and the values will be
+                    <a href="https://www.decthings.com/docs/api-nodejs#data">Data</a> or
+                    <a href="https://www.decthings.com/docs/api-nodejs#data">DataElement</a>.
+                </li>
+                <li>
+                    For all other DataElement types (binary, image, audio, video), the inner bytes is extracted and output as a
+                    Node.js <a href="https://nodejs.org/api/buffer.html#buffer">Buffer</a>.
+                </li>
+            </ul>
+
+            If no DataElement is found (for example if the model has zero output parameters), then an exception is thrown.
+        </dd>
+
+        <dt>type <span class="property-type">string</span>
+        </dt>
+        <dd>
+            The output field <code>msg.type</code> will be set to the data type of the found DataElement. This is
+            one of: "<code>dict</code>", "<code>f32</code>", "<code>f64</code>", "<code>i8</code>", "<code>i16</code>",
+            "<code>i32</code>", "<code>i64</code>", "<code>u8</code>", "<code>u16</code>", "<code>u32</code>", "<code>u64</code>",
+            "<code>string</code>", "<code>boolean</code>", "<code>binary</code>", "<code>image</code>", "<code>audio</code>" or
+            "<code>video</code>".
+        </dd>
+
+        <dt class="optional">format <span class="property-type">string</span>
+        </dt>
+        <dd>
+            If the found DataElement is of type <code>image</code>, <code>audio</code> or <code>video</code>, the output field
+            <code>msg.format</code> is set to the three-letter image/audio/video format string - for example "png".
+        </dd>
+    </dl>
+</script>

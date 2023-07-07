@@ -1,0 +1,137 @@
+<script type="text/javascript">
+    RED.nodes.registerType(
+        'decthings-single-input',
+        {
+            category: 'function',
+            color: '#4187d6',
+            defaults: {
+                parameterName: {
+                    value: "",
+                },
+                dataType: {
+                    value: "image/png",
+                }
+            },
+            inputs: 1,
+            outputs: 1,
+            label: function() {
+                return this.name || "Decthings single input";
+            }
+        }
+    );
+</script>
+
+<script type="text/html" data-template-name="decthings-single-input">
+    <p>
+        This node creates a Decthings parameter which can be used as the input to an evaluate node.
+        <br />
+        <br />
+        It does so by creating a single parameter with the configured name, and fills it with a single Decthings
+        <a target="_blank" style="color: var(--red-ui-text-color-link)" href="https://www.decthings.com/docs/api-nodejs#data">DataElement</a>
+        of the configured data type.
+    </p>
+    <div class="form-row">
+        <label for="node-input-parameterName" style="width: 150px">
+            <i class="fa fa-tag"></i> Parameter name
+        </label>
+        <input type="text" id="node-input-parameterName" placeholder="Parameter name"></input>
+    </div>
+    <p>
+        Select the name for the parameter to create. This must precisely match the name of the evaluate input parameter of the model. You can
+        find the input/output parameters of a model on the
+        <a target="_blank" style="color: var(--red-ui-text-color-link)" href="https://app.decthings.com/models">model page</a>, under settings.
+    </p>
+    <div class="form-row">
+        <label for="node-input-dataType">
+            <i class="fa fa-tag"></i> Data type
+        </label>
+        <select name="Data type" id="node-input-dataType">
+          <option value="f32">Float 32</option>
+          <option value="f64">Float 64</option>
+          <option value="i8">Signed int 8</option>
+          <option value="i16">Signed int 16</option>
+          <option value="i32">Signed int 32</option>
+          <option value="i64">Signed int 64</option>
+          <option value="u8">Unsigned int 8</option>
+          <option value="u16">Unsigned int 16</option>
+          <option value="u32">Unsigned int 32</option>
+          <option value="u64">Unsigned int 64</option>
+          <option value="string">String</option>
+          <option value="boolean">Boolean</option>
+          <option value="binary">Binary</option>
+          <option value="image/png">Image (PNG)</option>
+          <option value="image/jpg">Image (JPG)</option>
+          <option value="audio/mp3">Audio (MP3)</option>
+          <option value="audio/wav">Audio (WAV)</option>
+          <option value="video/mp4">Video (MP4)</option>
+        </select>
+    </div>
+    <p>Select which data type to output.</p>
+</script>
+
+<script type="text/html" data-help-name="decthings-single-input">
+    <p>
+        This node creates a Decthings parameter which can be used as the input to an evaluate node.
+        <br />
+        <br />
+        Uses the input data to create a single Decthings <a href="https://www.decthings.com/docs/api-nodejs#data">DataElement</a> of the configured
+        data type, places this data element as the only element in a Decthings <a href="https://www.decthings.com/docs/api-nodejs#data">Data</a>,
+        and then returns a parameter by using the created Data and the configured parameter name.
+        <br />
+        <br />
+        For example, if the data type is configured as image/png and the parameter name is "myparameter", this node outputs the following (for the input
+        "msg" which is a <a href="https://nodejs.org/api/buffer.html#buffer">Buffer</a>):
+        <pre>msg.payload = [{ name: "myparameter", data: new Data([DataElement.image("png", msg)]) }]</pre>
+    </p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">number | string | boolean | Buffer</span>
+        </dt>
+        <dd>
+            The message field <code>msg.payload</code> will be converted to a Decthings
+            <a href="https://www.decthings.com/docs/api-nodejs#data">DataElement</a>.
+            <ul>
+                <li>
+                    For numeric data types (f32, f64, i8, i16, i32, i64, u8, u16, u32 and u64), the payload must be a number.
+                </li>
+                <li>
+                    For string data type, the payload must be string
+                </li>
+                <li>
+                    For boolean data type, the payload must be boolean
+                </li>
+                <li>
+                    For all other data types (binary, image, audio, video) the payload data must be a
+                    <a href="https://nodejs.org/api/buffer.html#buffer">Buffer</a> containing the file data.
+                </li>
+            </ul>
+        </dd>
+
+        <dt class="optional">parameterName <span class="property-type">string</span></dt>
+        <dd>
+            The message field <code>msg.parameterName</code> can be used to override the configured parameter name.
+        </dd>
+
+        <dt class="optional">dataType<span class="property-type">string</span></dt>
+        <dd>
+            The message field <code>msg.dataType</code> can be used to override the configured data type. It must be one of:
+            "<code>f32</code>", "<code>f64</code>", "<code>i8</code>", "<code>i16</code>", "<code>i32</code>", "<code>i64</code>",
+            "<code>u8</code>", "<code>u16</code>", "<code>u32</code>", "<code>u64</code>", "<code>string</code>",
+            "<code>boolean</code>", "<code>image/png</code>", "<code>image/jpg</code>", "<code>audio/mp3</code>",
+            "<code>audio/wav</code>" or "<code>video/mp4</code>"
+        </dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">array</span>
+        </dt>
+        <dd>
+            The message field <code>msg.payload</code> will contain an array of a single Decthings parameter. The payload
+            has the following form:
+            <pre>[{ name: string, data: <a target="_blank" href="https://www.decthings.com/docs/api-nodejs#data">Data</a> }]</pre>
+        </dd>
+    </dl>
+</script>
