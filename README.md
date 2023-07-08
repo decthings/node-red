@@ -2,7 +2,7 @@
 
 ## Decthings Node-RED
 
-[![npm version](https://badge.fury.io/js/@decthings%2Fnode-red.svg)](https://badge.fury.io/js/@decthings%2Fapi-client)
+[![npm version](https://badge.fury.io/js/@decthings%2Fnode-red.svg)](https://badge.fury.io/js/@decthings%2Fnode-red)
 
 This package contains node definitions for [Node-RED](https://nodered.org/).
 
