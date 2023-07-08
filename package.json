@@ -28,7 +28,8 @@
     "nodes": {
       "decthings-single-input": "singleInput/singleInput.js",
       "decthings-evaluate": "evaluate/evaluate.js",
-      "decthings-single-output": "singleOutput/singleOutput.js"
+      "decthings-single-output": "singleOutput/singleOutput.js",
+      "decthings-add-to-dataset": "addToDataset/addToDataset.js"
     }
   }
 }

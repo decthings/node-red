@@ -1,0 +1,147 @@
+<script type="text/javascript">
+    RED.nodes.registerType(
+        'decthings-add-to-dataset',
+        {
+            category: 'function',
+            color: '#4187d6',
+            defaults: {
+                datasetId: {
+                    value: "",
+                },
+                needsReview: {
+                    value: false,
+                },
+                apiKey: {
+                    value: "",
+                }
+            },
+            inputs: 1,
+            outputs: 1,
+            label: function() {
+                return this.name || "decthings add to dataset";
+            }
+        }
+    );
+</script>
+
+<script type="text/html" data-template-name="decthings-add-to-dataset">
+    <p>
+        This node adds data to a Decthings dataset, allowing you to later use the data in training. Decthings is a platform
+        which allows you to create and run models in the cloud.
+        <br />
+        <br />
+        Note: With Decthings, you pay for the data storage you use. This node may add to your monthly Decthings invoice.
+    </p>
+    <div class="form-row">
+        <label for="node-input-datasetId">
+            <i class="fa fa-tag"></i> Dataset ID
+        </label>
+        <input type="text" id="node-input-datasetId" placeholder="Dataset ID"></input>
+    </div>
+    <p>
+        The dataset ID defines which dataset to use and can be found on the
+        <a target="_blank" style="color: var(--red-ui-text-color-link)" href="https://app.decthings.com/datasets">dataset page</a>.
+    </p>
+    <div class="form-row">
+        <label for="node-input-needsReview" style="width: 150px">
+            <i class="fa fa-tag"></i> Add to needs review
+        </label>
+        <input style="width: 50px" type="checkbox" id="node-input-needsReview"></input>
+    </div>
+    <p>
+        If checked, the data will not immediately be added to the dataset but instead to the "needs review" section. This allows you to
+        manually review the data before it is added to the dataset.
+    </p>
+    <div class="form-row">
+        <label for="node-input-apiKey">
+            <i class="fa fa-tag"></i> API key
+        </label>
+        <input type="text" id="node-input-apiKey" placeholder="Api key"></input>
+    </div>
+    <p>
+        Add an API key to authenticate with Decthings. You can create an API key on your
+        <a target="_blank" style="color: var(--red-ui-text-color-link)" href="https://app.decthings.com/account">account page</a>.
+    </p>
+</script>
+
+<script type="text/html" data-help-name="decthings-add-to-dataset">
+    <p>
+        This node adds data to a Decthings dataset, allowing you to later use the data in training. Decthings is a platform
+        which allows you to create and run models in the cloud.
+        <br />
+        <br />
+        Note: With Decthings, you pay for the data storage you use. This node may add to your monthly Decthings invoice.
+        <br />
+        <br />
+        You will need to construct the data using a function node, and connect it to the input of this node.
+    </p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">array</span>
+        </dt>
+        <dd>
+            Will use the input payload as the "entries" property of the
+            <a href="https://www.decthings.com/docs/api-nodejs#dataset-addentries">addEntries</a>/<a href="https://www.decthings.com/docs/api-nodejs#dataset-addentriestoneedsreview">addEntriesToNeedsReview</a>
+            call to Decthings.
+            <br />
+            <br />
+            Therefore, the payload should be an array of the form:
+            <pre><a target="_blank" href="https://www.decthings.com/docs/api-nodejs#data">Data</a>[] | <a target="_blank" href="https://www.decthings.com/docs/api-nodejs#data">DataElement</a>[]</pre>. 
+        </dd>
+
+        <dt class="optional">datasetId <span class="property-type">string</span></dt>
+        <dd>
+            The message field <code>msg.datasetId</code> can be used to override the configured dataset ID. This configures which dataset
+            to use.
+        </dd>
+
+        <dt class="optional">needsReview <span class="property-type">boolean</span></dt>
+        <dd>
+            The message field <code>msg.needsReview</code> can be used to override the configured needs review checkbox. If true, the data
+            will be added to the "needs review" section of the dataset, which allows you to manually review the data before adding it to
+            the dataset. If false, the data is immediately inserted into the dataset. If omitted, the value configured in the UI checkbox
+            is used.
+        </dd>
+
+        <dt class="optional">apiKey <span class="property-type">string</span></dt>
+        <dd>
+            The message field <code>msg.apiKey</code> can be used to override the configured API key.
+        </dd>
+
+        <br />
+        In total, the call to Decthings looks like the following:
+        <pre>let needsReview == typeof msg.needsReview === 'boolean'
+    ? msg.needsReview
+    : typeof config.needsReview === 'boolean'
+    ? config.needsReview
+    : true
+if (needsReview) {
+    let response = await decthingsClient.dataset.addEntriesToNeedsReview({
+        datasetId: msg.datasetId || config.datasetId,
+        entries: msg.payload
+    })
+} else {
+    let response = await decthingsClient.dataset.addEntries({
+        datasetId: msg.datasetId || config.datasetId,
+        entries: msg.payload
+    })
+}</pre>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload
+            <span class="property-type">object</span>
+        </dt>
+        <dd>
+            If the add is successful the output field <code>msg.payload</code> will be set to the output of the call to Decthings:
+            <pre>msg.payload = response.result</pre>. This has the form <pre>{ newDatasetVersionId: string }</pre>
+        </dd>
+    </dl>
+
+    <p>
+        Take a look at the <a href="https://www.decthings.com/docs/api-nodejs#dataset-addentries">documentation</a> for more information
+        about the inputs and outputs to the decthings add dataset entries function.
+    </p>
+</script>

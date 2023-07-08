@@ -7,7 +7,6 @@
             defaults: {
                 modelId: {
                     value: "",
-                    required: true
                 },
                 snapshotId: {
                     value: "",
@@ -56,8 +55,10 @@
         <input type="text" id="node-input-apiKey" placeholder="Api key"></input>
     </div>
     <p>
-        Add an API key to use your own models. Without an API key you can only use public Decthings-made models, and you will be limited
-        to only a few evaluations during a certain time period.
+        Add an API key to authenticate with Decthings, which is required to use your own models. Without an API key you can only
+        use public Decthings-made models, and you will be limited to only a few evaluations during a certain time period. You can
+        create an API key on your
+        <a target="_blank" style="color: var(--red-ui-text-color-link)" href="https://app.decthings.com/account">account page</a>.
     </p>
 </script>
 
@@ -84,7 +85,9 @@
             <span class="property-type">array</span>
         </dt>
         <dd>
-            Will use the input payload as the "params" property of the evaluate call to Decthings.
+            Will use the input payload as the "params" property of the
+            <a href="https://www.decthings.com/docs/api-nodejs#model-evaluate">evaluate</a>
+            call to Decthings.
             <br />
             <br />
             Therefore, the payload should be an array of input parameters, of the form:
@@ -100,6 +103,11 @@
         <dd>
             The message field <code>msg.snapshotId</code> can be used to override the configured snapshot ID. If provided or configured,
             the snapshot ID specifies which snapshot within the model to use.
+        </dd>
+
+        <dt class="optional">apiKey <span class="property-type">string</span></dt>
+        <dd>
+            The message field <code>msg.apiKey</code> can be used to override the configured API key.
         </dd>
 
         <br />

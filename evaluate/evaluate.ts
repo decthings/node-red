@@ -3,38 +3,15 @@ import { ModelRpc } from '@decthings/api-client/dist/Rpc'
 import * as NodeRed from 'node-red'
 import * as uuid from 'uuid'
 
-const types = [
-    'f32',
-    'f64',
-    'i8',
-    'i16',
-    'i32',
-    'i64',
-    'u8',
-    'u16',
-    'u32',
-    'u64',
-    'string',
-    'boolean',
-    'image/png',
-    'image/jpg',
-    'audio/mp3',
-    'audio/wav',
-    'video/mp4'
-] as const
-
-type DataType = (typeof types)[any]
-
 interface EvaluateNodeDef extends NodeRed.NodeDef {
     modelId: string
     snapshotId?: string
     apiKey?: string
-    convertInput: 'no' | DataType
 }
 
 class DecthingsEvaluateError extends Error {
     constructor(public inner: Awaited<ReturnType<ModelRpc['evaluate']>>['error']) {
-        super(`The Decthings evaluation failed to start, with error: ${inner.code}`)
+        super(`The Decthings evaluation failed to start, with error: ${inner.code}${inner.code === 'invalid_parameter' ? ` - ${inner.reason}` : ''}`)
     }
 }
 
@@ -69,8 +46,6 @@ const nodeInit: NodeRed.NodeInitializer = (RED): void => {
 
         if (config.modelId) {
             node.status({ fill: 'blue', shape: 'dot', text: `Looking for model..` })
-        } else {
-            node.status({ fill: 'red', shape: 'dot', text: 'No model specified' })
         }
 
         const decthingsClient = new DecthingsClient({ apiKey: config.apiKey })
@@ -79,31 +54,47 @@ const nodeInit: NodeRed.NodeInitializer = (RED): void => {
 
         let name: string
         let fetchingName = false
+        let doNotTryFetchNameAgain = false
         async function tryGetModelName() {
-            if (name || fetchingName) {
+            if (doNotTryFetchNameAgain || name || fetchingName || !config.modelId) {
                 return
             }
-            if (config.modelId) {
-                try {
-                    fetchingName = true
-                    const models = await decthingsClient.model.getModels({ modelIds: [config.modelId] })
-                    if (models.error) {
+            try {
+                fetchingName = true
+                decthingsClient.setApiKey(config.apiKey)
+                const models = await decthingsClient.model.getModels({ modelIds: [config.modelId] })
+                if (models.error) {
+                    if (models.error.code === 'bad_credentials') {
+                        doNotTryFetchNameAgain = true
+                    }
+                    if (!evaluating) {
+                        node.status({
+                            fill: 'red',
+                            shape: 'dot',
+                            text: `Error contacting Decthings: ${models.error.code === 'bad_credentials' ? 'Bad API key' : models.error.code}`
+                        })
+                    }
+                } else {
+                    const model = models.result.models.find((x) => x.id == config.modelId)
+                    if (model) {
+                        name = model.name
                         if (!evaluating) {
-                            node.status({
-                                fill: 'red',
-                                shape: 'dot',
-                                text: `Error contacting Decthings: ${models.error.code === 'bad_credentials' ? 'Bad API key' : models.error.code}`
-                            })
+                            node.status({ fill: 'green', shape: 'dot', text: `Ready to evaluate "${name}"` })
                         }
                     } else {
-                        const model = models.result.models.find((x) => x.id == config.modelId)
-                        if (!model) {
+                        doNotTryFetchNameAgain = true
+                        if (!evaluating) {
                             if (uuid.validate(config.modelId)) {
-                                node.status({
-                                    fill: 'red',
-                                    shape: 'dot',
-                                    text: `Model not found${config.apiKey ? '' : '. Add an API key to use your own models.'}`
-                                })
+                                if (config.apiKey) {
+                                    node.status({
+                                        fill: 'red',
+                                        shape: 'dot',
+                                        text: `Model not found.`
+                                    })
+                                } else {
+                                    // The API key may be included in the msg.apiKey field, so model may in fact exist
+                                    node.status({ fill: 'green', shape: 'dot', text: 'Ready to evaluate' })
+                                }
                             } else {
                                 node.status({
                                     fill: 'red',
@@ -111,41 +102,49 @@ const nodeInit: NodeRed.NodeInitializer = (RED): void => {
                                     text: `Model not found. Use the model ID, not the name.`
                                 })
                             }
-                        } else {
-                            name = model.name
-                            if (!evaluating) {
-                                node.status({ fill: 'green', shape: 'dot', text: `Ready to evaluate "${name}"` })
-                            }
                         }
                     }
-                } catch (e) {
-                    if (!evaluating) {
-                        node.status({ fill: 'red', shape: 'dot', text: `Failed to communicate with Decthings` })
-                    }
-                } finally {
-                    fetchingName = false
                 }
+            } catch (e) {
+                if (!evaluating) {
+                    node.status({ fill: 'red', shape: 'dot', text: `Failed to communicate with Decthings` })
+                }
+            } finally {
+                fetchingName = false
             }
         }
-
         tryGetModelName()
 
         node.on('input', async (msg, send: any, done) => {
-            if (!config.modelId) {
+            const msgDotModelId: string = (msg as any).modelId
+            const msgDotSnapshotId: string = (msg as any).snapshotId
+            const msgDotApiKey: string = (msg as any).apiKey
+            const modelIdToUse = msgDotModelId || config.modelId
+            const snapshotIdToUse = msgDotSnapshotId || config.snapshotId
+            const apiKeyToUse = msgDotApiKey || config.apiKey
+
+            if (!modelIdToUse) {
                 node.status({ fill: 'red', shape: 'dot', text: 'No model specified' })
                 done(new Error('No model specified'))
                 return
             }
+
+            decthingsClient.setApiKey(apiKeyToUse)
+
             evaluating = true
             node.status({ fill: 'blue', shape: 'ring', text: 'Evaluating..' })
             try {
                 let result = await decthingsClient.model.evaluate({
-                    modelId: config.modelId,
+                    modelId: modelIdToUse,
                     params: msg.payload as any,
-                    snapshotId: config.snapshotId || undefined
+                    snapshotId: snapshotIdToUse
                 })
                 if (result.error) {
-                    node.status({ fill: 'red', shape: 'dot', text: 'Evaluation failed to start' })
+                    node.status({
+                        fill: 'red',
+                        shape: 'dot',
+                        text: `Evaluation failed to start: ${result.error.code === 'model_not_found' ? 'Model not found' : result.error.code}`
+                    })
                     done(new DecthingsEvaluateError(result.error))
                 } else if (result.result.failed) {
                     node.status({ fill: 'red', shape: 'dot', text: 'Evaluation failed' })
@@ -161,7 +160,6 @@ const nodeInit: NodeRed.NodeInitializer = (RED): void => {
                     done()
                 }
             } catch (e) {
-                tryGetModelName()
                 if (e instanceof DecthingsClientError) {
                     if (e instanceof DecthingsClientInvalidRequestError) {
                         node.status({ fill: 'red', shape: 'dot', text: `Evaluation failed to start: Invalid input` })
